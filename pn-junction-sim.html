@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p-n Junction Interactive Lab | 반도체공학 가상실습</title>
+  <style>
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-sub: #334155;
+      --border-color: #475569;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --accent-p: #ef4444; /* 정공 / p형 */
+      --accent-n: #3b82f6; /* 전자 / n형 */
+      --accent-depletion: rgba(148, 163, 184, 0.22);
+      --accent-gold: #f59e0b;
+      --accent-green: #10b981;
+      --accent-purple: #a855f7;
+      --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Malgun Gothic", sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg-main: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-sub: #e2e8f0;
+      --border-color: #cbd5e1;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --accent-p: #dc2626;
+      --accent-n: #2563eb;
+      --accent-depletion: rgba(100, 116, 139, 0.18);
+      --accent-gold: #d97706;
+      --accent-green: #059669;
+      --accent-purple: #9333ea;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 10px 14px;
+      gap: 8px;
+    }
+
+    /* 상단 헤더 */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px 16px;
+      height: 54px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15);
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .title-area h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #f43f5e, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .title-area .badge {
+      font-size: 0.8rem;
+      background: var(--bg-card-sub);
+      color: var(--text-main);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    button {
+      background: var(--bg-card-sub);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease-in-out;
+    }
+
+    button:hover {
+      background: var(--border-color);
+      filter: brightness(1.1);
+    }
+
+    button.active-preset {
+      background: #3b82f6;
+      border-color: #60a5fa;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+
+    /* 메인 대시보드 그리드 (16:9 최적화) */
+    .dashboard {
+      flex: 1;
+      display: grid;
+      grid-template-rows: 1.15fr 1fr;
+      grid-gap: 8px;
+      min-height: 0;
+    }
+
+    .top-section {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .bottom-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 8px;
+      min-height: 0;
+    }
+
+    .card-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 14px;
+      background: rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .panel-header .tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    .canvas-container {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 하단 컨트롤 및 물리량 표시 바 */
+    .control-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px 16px;
+      height: 72px;
+      display: grid;
+      grid-template-columns: 360px 220px 1fr auto;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15);
+    }
+
+    .slider-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .slider-label-row span {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    .slider-label-row .voltage-val {
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: var(--accent-gold);
+      font-family: monospace;
+    }
+
+    input[type=range] {
+      width: 100%;
+      cursor: pointer;
+      height: 8px;
+      accent-color: var(--accent-gold);
+    }
+
+    .doping-select-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .doping-select-box span {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    .toggle-group {
+      display: flex;
+      background: var(--bg-card-sub);
+      border-radius: 6px;
+      padding: 2px;
+      border: 1px solid var(--border-color);
+    }
+
+    .toggle-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 5px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: 4px;
+    }
+
+    .toggle-btn.active {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .metric-cards {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .metric-card {
+      background: var(--bg-card-sub);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 6px 12px;
+      flex: 1;
+      min-width: 110px;
+    }
+
+    .metric-card .title {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .metric-card .value {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    .shortcut-hints {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 0.72rem;
+      color: var(--text-sub);
+      border-left: 1px solid var(--border-color);
+      padding-left: 12px;
+    }
+
+    .shortcut-hints kbd {
+      background: var(--bg-card-sub);
+      border: 1px solid var(--border-color);
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body data-theme="dark">
+
+  <!-- 상단 네비게이션 & 프리셋 헤더 -->
+  <header>
+    <div class="title-area">
+      <h1>p-n Junction Interactive Lab</h1>
+      <span class="badge">강의실 프로젝터 최적화 (16:9)</span>
+    </div>
+
+    <div class="header-controls">
+      <div class="btn-group">
+        <button id="btn-preset-eq" class="active-preset" onclick="setPreset(0.0)">1. 열적 평형 (0V)</button>
+        <button id="btn-preset-fwd" onclick="setPreset(0.7)">2. 순방향 (+0.7V)</button>
+        <button id="btn-preset-rev" onclick="setPreset(-3.0)">3. 역방향 (-3.0V)</button>
+      </div>
+      <button id="btn-pause" onclick="togglePause()">⏸ 일시정지 (Space)</button>
+      <button id="btn-labels" onclick="toggleLabels()">🏷 물리 라벨 [ON]</button>
+      <button id="btn-theme" onclick="toggleTheme()">☀️ 테마 전환</button>
+    </div>
+  </header>
+
+  <!-- 메인 시뮬레이션 대시보드 -->
+  <main class="dashboard">
+    <!-- 상단: 2D p-n 접합 반도체 구조 및 전하 수송 실시간 애니메이션 -->
+    <section class="top-section">
+      <div class="panel-header">
+        <span>🔬 p-n 접합 캐리어 동역학 & 공핍층 실시간 시뮬레이션</span>
+        <span class="tag">🔴 정공(Hole: +) | 🔵 전자(Electron: -) | ⭕ 고정 이온(Fixed Ions) | ⚡ 외부 회로</span>
+      </div>
+      <div class="canvas-container">
+        <canvas id="junctionCanvas"></canvas>
+      </div>
+    </section>
+
+    <!-- 하단: 에너지 밴드 다이어그램 & I-V 특성 곡선 -->
+    <div class="bottom-section">
+      <!-- 하단 좌측: 에너지 밴드 다이어그램 -->
+      <section class="card-panel">
+        <div class="panel-header">
+          <span>⚡ 에너지 밴드 다이어그램 (Energy Band Diagram)</span>
+          <span class="tag">Ec, Ev, 준페르미 준위 (EFp, EFn) & 전위 장벽 q(Vbi - Va)</span>
+        </div>
+        <div class="canvas-container">
+          <canvas id="bandCanvas"></canvas>
+        </div>
+      </section>
+
+      <!-- 하단 우측: I-V 특성 곡선 -->
+      <section class="card-panel">
+        <div class="panel-header">
+          <span>📈 I-V 특성 곡선 (Current - Voltage Characteristic)</span>
+          <span class="tag">실리콘 다이오드 거동 (Vth ≈ 0.7V) & 실시간 동작점(Operating Point)</span>
+        </div>
+        <div class="canvas-container">
+          <canvas id="ivCanvas"></canvas>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 하단 조작 패널 & 물리 지표 카드 -->
+  <footer class="control-bar">
+    <!-- 전압 조절 슬라이더 -->
+    <div class="slider-box">
+      <div class="slider-label-row">
+        <span>외부 인가 전압 (Va)</span>
+        <span id="voltageDisplay" class="voltage-val">0.00 V</span>
+      </div>
+      <input type="range" id="voltageSlider" min="-5.0" max="0.9" step="0.05" value="0.0">
+    </div>
+
+    <!-- 도핑 비대칭 선택 -->
+    <div class="doping-select-box">
+      <span>접합 도핑 비율</span>
+      <div class="toggle-group">
+        <button id="dop-sym" class="toggle-btn active" onclick="setDoping('sym')">대칭 (p = n)</button>
+        <button id="dop-asym" class="toggle-btn" onclick="setDoping('asym')">비대칭 (p⁺ - n)</button>
+      </div>
+    </div>
+
+    <!-- 물리량 상태 요약 카드 -->
+    <div class="metric-cards">
+      <div class="metric-card">
+        <div class="title">동작 바이어스 모드</div>
+        <div id="metric-mode" class="value" style="color: #38bdf8;">열적 평형 (Equilibrium)</div>
+      </div>
+      <div class="metric-card">
+        <div class="title">전위 장벽 q(Vbi - Va)</div>
+        <div id="metric-barrier" class="value" style="color: var(--accent-gold);">0.70 eV</div>
+      </div>
+      <div class="metric-card">
+        <div class="title">상대 공핍층 폭 (W)</div>
+        <div id="metric-width" class="value" style="color: var(--accent-purple);">1.00 W₀ (기준)</div>
+      </div>
+      <div class="metric-card">
+        <div class="title">다이오드 전류 (I)</div>
+        <div id="metric-current" class="value" style="color: var(--accent-green);">0.00 mA</div>
+      </div>
+    </div>
+
+    <!-- 단축키 힌트 -->
+    <div class="shortcut-hints">
+      <div><kbd>Space</kbd> 재생/정지 | <kbd>R</kbd> 리셋</div>
+      <div><kbd>1</kbd> 평형 | <kbd>2</kbd> 순방향 | <kbd>3</kbd> 역방향</div>
+    </div>
+  </footer>
+
+  <script>
+    /* ==========================================================================
+       1. 물리 상수 & 기본 상태 모델 정의
+       ========================================================================== */
+    const V_BI = 0.70;       // 빌트인 전위 장벽 (Built-in potential, Si 기준 약 0.7V)
+    const I_SAT = 1e-6;      // 역방향 포화전류 계수 (mA 단위 스케일용)
+    const THERMAL_VT = 0.026;// 열전압 Vt = kT/q (약 26mV)
+
+    let state = {
+      va: 0.0,              // 인가 전압 (Applied Voltage: -5.0V ~ +0.9V)
+      dopingType: 'sym',    // 'sym' (대칭 p=n) or 'asym' (비대칭 p+-n)
+      isPaused: false,      // 애니메이션 정지 여부
+      showLabels: true,     // 물리 설명 라벨 오버레이 여부
+      theme: 'dark'         // 테마 ('dark' | 'light')
+    };
+
+    // 캐리어 입자 시뮬레이션 모델 (정공 & 전자)
+    const NUM_CARRIERS = 140;
+    const carriers = [];
+
+    class Carrier {
+      constructor(type) {
+        this.type = type; // 'hole' or 'electron'
+        this.reset(true);
+      }
+
+      reset(initial = false) {
+        this.isRecombining = false;
+        this.recombineTimer = 0;
+        this.vx = (Math.random() - 0.5) * 1.4;
+        this.vy = (Math.random() - 0.5) * 1.4;
+
+        if (this.type === 'hole') {
+          // p형 내부(좌측) 또는 열적생성
+          this.x = initial ? Math.random() * 0.42 : Math.random() * 0.15;
+          this.y = 0.15 + Math.random() * 0.7;
+        } else {
+          // n형 내부(우측) 또는 열적생성
+          this.x = initial ? 0.58 + Math.random() * 0.42 : 0.85 + Math.random() * 0.15;
+          this.y = 0.15 + Math.random() * 0.7;
+        }
+      }
+    }
+
+    for (let i = 0; i < NUM_CARRIERS; i++) {
+      carriers.push(new Carrier('hole'));
+      carriers.push(new Carrier('electron'));
+    }
+
+    // 외부 회로 와이어 전자 애니메이션용
+    const circuitElectrons = [];
+    const NUM_CIRCUIT_ELECTRONS = 36;
+    for (let i = 0; i < NUM_CIRCUIT_ELECTRONS; i++) {
+      circuitElectrons.push({ progress: i / NUM_CIRCUIT_ELECTRONS });
+    }
+
+    /* ==========================================================================
+       2. 물리 계산 헬퍼 함수
+       ========================================================================== */
+    // 공핍층 폭 계산 함수 W = sqrt(2*eps/q * (Vbi - Va) * (Na+Nd)/(Na*Nd))
+    function calculateDepletionWidth(va, dopingType) {
+      let effectiveBarrier = V_BI - va;
+      if (effectiveBarrier < 0.05) effectiveBarrier = 0.05; // 순방향 완전 도통 시 최소폭 한계
+
+      const baseWidthFactor = Math.sqrt(effectiveBarrier / V_BI);
+      
+      let wpNorm, wnNorm;
+      if (dopingType === 'sym') {
+        // 대칭 접합: Wp = Wn
+        wpNorm = 0.5 * baseWidthFactor;
+        wnNorm = 0.5 * baseWidthFactor;
+      } else {
+        // 비대칭 접합 (p+ - n): Na >> Nd => 공핍층이 농도가 낮은 n형으로 대부분 확장됨
+        wpNorm = 0.12 * baseWidthFactor;
+        wnNorm = 0.88 * baseWidthFactor;
+      }
+
+      return {
+        totalRelative: baseWidthFactor,
+        barrier: effectiveBarrier,
+        wp: wpNorm,
+        wn: wnNorm
+      };
+    }
+
+    // 다이오드 전류 I(Va) [mA 스케일]
+    function calculateCurrent(va) {
+      if (va > 0.88) va = 0.88;
+      if (va >= 0) {
+        // 쇼클리 다이오드 식 직관적 스케일링
+        const id = I_SAT * (Math.exp(va / (1.6 * THERMAL_VT)) - 1);
+        return Math.min(id, 80.0);
+      } else {
+        // 역방향 포화전류 (매우 미세)
+        return -0.001 * (1 - Math.exp(va));
+      }
+    }
+
+    /* ==========================================================================
+       3. 캔버스 렌더링 시스템 (반응형 HiDPI 처리)
+       ========================================================================== */
+    const junctionCanvas = document.getElementById('junctionCanvas');
+    const bandCanvas = document.getElementById('bandCanvas');
+    const ivCanvas = document.getElementById('ivCanvas');
+
+    const ctxJ = junctionCanvas.getContext('2d');
+    const ctxB = bandCanvas.getContext('2d');
+    const ctxI = ivCanvas.getContext('2d');
+
+    function resizeCanvas(canvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      return { width: rect.width, height: rect.height, dpr: dpr };
+    }
+
+    /* --------------------------------------------------------------------------
+       메인 1: 2D 접합 및 전하 시뮬레이션 렌더링 (junctionCanvas)
+       -------------------------------------------------------------------------- */
+    let animTime = 0;
+
+    function renderJunction() {
+      const { width: w, height: h, dpr } = resizeCanvas(junctionCanvas);
+      ctxJ.save();
+      ctxJ.scale(dpr, dpr);
+
+      ctxJ.clearRect(0, 0, w, h);
+
+      const isDark = state.theme === 'dark';
+      const textColor = isDark ? '#f8fafc' : '#0f172a';
+      const subTextColor = isDark ? '#94a3b8' : '#64748b';
+
+      // 레이아웃 좌표 설정
+      const chipX = w * 0.10;
+      const chipY = h * 0.20;
+      const chipW = w * 0.80;
+      const chipH = h * 0.65;
+      const midX = chipX + chipW / 2;
+
+      const dep = calculateDepletionWidth(state.va, state.dopingType);
+      const maxHalfDep = chipW * 0.38; 
+      const wpPixels = dep.wp * maxHalfDep;
+      const wnPixels = dep.wn * maxHalfDep;
+
+      const xp = midX - wpPixels; // p형 공핍층 좌측 경계
+      const xn = midX + wnPixels; // n형 공핍층 우측 경계
+
+      // (1) 배경 영역 칠하기 (p형 영역: 붉은 틴트, n형 영역: 푸른 틴트)
+      ctxJ.fillStyle = isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)';
+      ctxJ.fillRect(chipX, chipY, midX - chipX, chipH);
+
+      ctxJ.fillStyle = isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.08)';
+      ctxJ.fillRect(midX, chipY, chipX + chipW - midX, chipH);
+
+      // (2) 공핍층(Depletion Region) 강조 영역
+      ctxJ.fillStyle = isDark ? 'rgba(148, 163, 184, 0.28)' : 'rgba(100, 116, 139, 0.22)';
+      ctxJ.fillRect(xp, chipY, xn - xp, chipH);
+
+      // (3) 반도체 바깥 테두리 및 접합면(중앙 메탈러지컬 접합선)
+      ctxJ.strokeStyle = isDark ? '#64748b' : '#94a3b8';
+      ctxJ.lineWidth = 2;
+      ctxJ.strokeRect(chipX, chipY, chipW, chipH);
+
+      // 중앙 물리 접합선 (Dashed line)
+      ctxJ.strokeStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
+      ctxJ.setLineDash([4, 4]);
+      ctxJ.beginPath();
+      ctxJ.moveTo(midX, chipY);
+      ctxJ.lineTo(midX, chipY + chipH);
+      ctxJ.stroke();
+      ctxJ.setLineDash([]);
+
+      // 공핍층 경계선
+      ctxJ.strokeStyle = '#f59e0b';
+      ctxJ.lineWidth = 1.8;
+      ctxJ.beginPath();
+      ctxJ.moveTo(xp, chipY); ctxJ.lineTo(xp, chipY + chipH);
+      ctxJ.moveTo(xn, chipY); ctxJ.lineTo(xn, chipY + chipH);
+      ctxJ.stroke();
+
+      // (4) 고정 이온(Fixed Space Charge Ions) 물리적 정확한 렌더링
+      // [물리 법칙] p측 공핍층 = 억셉터 이온 음전하(-), n측 공핍층 = 도너 이온 양전하(+)
+      const ionRadius = Math.max(9, Math.min(14, h * 0.035));
+      const rowStep = chipH / 5;
+
+      // p측 공핍층 음이온: 원 안의 '-'
+      const pIonCols = Math.max(1, Math.round(wpPixels / 30));
+      for (let r = 0.5; r < 5; r++) {
+        for (let c = 0; c < pIonCols; c++) {
+          const ix = xp + ((c + 0.5) / pIonCols) * wpPixels;
+          const iy = chipY + r * rowStep;
+          if (ix < midX - 6) {
+            drawFixedIon(ctxJ, ix, iy, ionRadius, '-', '#ef4444', isDark);
+          }
+        }
+      }
+
+      // n측 공핍층 양이온: 원 안의 '+'
+      const nIonCols = Math.max(1, Math.round(wnPixels / 30));
+      for (let r = 0.5; r < 5; r++) {
+        for (let c = 0; c < nIonCols; c++) {
+          const ix = midX + ((c + 0.5) / nIonCols) * wnPixels;
+          const iy = chipY + r * rowStep;
+          if (ix > midX + 6 && ix < xn) {
+            drawFixedIon(ctxJ, ix, iy, ionRadius, '+', '#3b82f6', isDark);
+          }
+        }
+      }
+
+      // (5) 내부 전기장 화살표 (E_bi: n측(+)에서 p측(-)을 향함 - 물리적 핵심!)
+      if (xn - xp > 24) {
+        drawElectricFieldArrows(ctxJ, midX, xp, xn, chipY + chipH * 0.88, isDark);
+      }
+
+      // (6) 자유 이동 캐리어(정공 & 전자) 위치 업데이트 & 렌더링
+      renderMobileCarriers(ctxJ, chipX, chipY, chipW, chipH, xp, xn, midX, isDark);
+
+      // (7) 외부 회로 (와이어, 전압원 배터리 기호, 전류/전자 흐름 화살표)
+      drawExternalCircuit(ctxJ, chipX, chipY, chipW, chipH, isDark);
+
+      // (8) 영역별 명칭 및 공핍폭 라벨 표시
+      if (state.showLabels) {
+        drawJunctionLabels(ctxJ, chipX, chipY, chipW, chipH, xp, xn, midX, textColor, subTextColor);
+      }
+
+      ctxJ.restore();
+    }
+
+    // 고정 이온 그리기 헬퍼
+    function drawFixedIon(ctx, x, y, r, sign, strokeColor, isDark) {
+      ctx.save();
+      ctx.fillStyle = isDark ? '#1e293b' : '#f8fafc';
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = strokeColor;
+      ctx.font = `bold ${Math.round(r * 1.3)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(sign, x, y + 1);
+      ctx.restore();
+    }
+
+    // 내부 전기장 벡터(E_bi) 화살표: n -> p 방향
+    function drawElectricFieldArrows(ctx, midX, xp, xn, arrowY, isDark) {
+      ctx.save();
+      const length = (xn - xp) * 0.75;
+      const startX = midX + length / 2;
+      const endX = midX - length / 2;
+
+      ctx.strokeStyle = '#f59e0b';
+      ctx.fillStyle = '#f59e0b';
+      ctx.lineWidth = 3;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, arrowY);
+      ctx.lineTo(endX, arrowY);
+      ctx.stroke();
+
+      // 좌측 방향 화살표 머리 (n -> p)
+      ctx.beginPath();
+      ctx.moveTo(endX, arrowY);
+      ctx.lineTo(endX + 10, arrowY - 5);
+      ctx.lineTo(endX + 10, arrowY + 5);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.font = 'bold 13px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillText('내부 전기장 (E_bi: n → p)', midX, arrowY - 10);
+      ctx.restore();
+    }
+
+    // 자유 캐리어 수송 애니메이션
+    function renderMobileCarriers(ctx, chipX, chipY, chipW, chipH, xp, xn, midX, isDark) {
+      const va = state.va;
+      const speedScale = state.isPaused ? 0 : 1.0;
+
+      carriers.forEach(c => {
+        if (!state.isPaused) {
+          // 순방향 바이어스: 확산(Diffusion) 구동력 증가 (정공 -> 우측, 전자 -> 좌측)
+          // 역방향 바이어스: 양끝단으로 쓸려나감
+          let biasForceX = 0;
+          if (va > 0) {
+            const fwdPush = Math.max(0, va - 0.3) * 1.8;
+            biasForceX = (c.type === 'hole') ? fwdPush : -fwdPush;
+          } else {
+            const revPull = Math.abs(va) * 0.8;
+            biasForceX = (c.type === 'hole') ? -revPull : revPull;
+          }
+
+          // 무작위 열운동 (Brownian Motion) + 드리프트/확산
+          c.x += (c.vx + biasForceX * 0.05) * 0.003 * speedScale;
+          c.y += c.vy * 0.003 * speedScale;
+
+          // 공핍층 장벽 반발 효과 (바이어스에 따라 통과 확률 결정)
+          const inDepletion = (c.x * chipW + chipX > xp && c.x * chipW + chipX < xn);
+          if (inDepletion) {
+            const barrierPenetrateProb = Math.max(0.01, Math.exp((va - V_BI) / 0.15));
+            if (Math.random() > barrierPenetrateProb) {
+              // 튕겨남
+              if (c.type === 'hole' && c.x * chipW + chipX < midX) {
+                c.vx = -Math.abs(c.vx);
+              } else if (c.type === 'electron' && c.x * chipW + chipX > midX) {
+                c.vx = Math.abs(c.vx);
+              }
+            } else {
+              // 순방향 주입 & 재결합 시뮬레이션
+              if (va > 0.45 && Math.random() < 0.04) {
+                c.isRecombining = true;
+              }
+            }
+          }
+
+          // 경계면 반사 및 리셋
+          if (c.x < 0.02) { c.x = 0.02; c.vx = Math.abs(c.vx); }
+          if (c.x > 0.98) { c.x = 0.98; c.vx = -Math.abs(c.vx); }
+          if (c.y < 0.12) { c.y = 0.12; c.vy = Math.abs(c.vy); }
+          if (c.y > 0.82) { c.y = 0.82; c.vy = -Math.abs(c.vy); }
+
+          if (c.isRecombining) {
+            c.recombineTimer += 0.05;
+            if (c.recombineTimer > 1) c.reset(false);
+          }
+        }
+
+        // 실제 픽셀 좌표
+        const px = chipX + c.x * chipW;
+        const py = chipY + c.y * chipH;
+
+        ctx.save();
+        if (c.type === 'hole') {
+          // 정공 (붉은색 + 기호 입자)
+          ctx.fillStyle = c.isRecombining ? '#fbbf24' : '#ef4444';
+          ctx.beginPath();
+          ctx.arc(px, py, 5.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('+', px, py + 0.5);
+        } else {
+          // 전자 (파란색 - 기호 입자)
+          ctx.fillStyle = c.isRecombining ? '#fbbf24' : '#3b82f6';
+          ctx.beginPath();
+          ctx.arc(px, py, 5.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 11px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('-', px, py);
+        }
+        ctx.restore();
+      });
+    }
+
+    // 외부 회로(도선, 배터리 극성, 전류 방향) 렌더링
+    function drawExternalCircuit(ctx, chipX, chipY, chipW, chipH, isDark) {
+      const wireY = chipY - 32;
+      const pContactX = chipX + 20;
+      const nContactX = chipX + chipW - 20;
+      const midWireX = chipX + chipW / 2;
+
+      ctx.save();
+      ctx.strokeStyle = isDark ? '#94a3b8' : '#475569';
+      ctx.lineWidth = 2.5;
+
+      // 도선 경로 그리기
+      ctx.beginPath();
+      // p측 전극에서 위로 올라감
+      ctx.moveTo(pContactX, chipY);
+      ctx.lineTo(pContactX, wireY);
+      ctx.lineTo(midWireX - 35, wireY);
+      // n측 전극에서 위로 올라감
+      ctx.moveTo(nContactX, chipY);
+      ctx.lineTo(nContactX, wireY);
+      ctx.lineTo(midWireX + 35, wireY);
+      ctx.stroke();
+
+      // 전극 메탈 컨택트
+      ctx.fillStyle = isDark ? '#cbd5e1' : '#334155';
+      ctx.fillRect(pContactX - 10, chipY - 5, 20, 7);
+      ctx.fillRect(nContactX - 10, chipY - 5, 20, 7);
+
+      // 전압원 배터리 기호 표시 (midWireX 부근)
+      drawBatterySymbol(ctx, midWireX, wireY, state.va, isDark);
+
+      // 도선 상의 전자 및 전류 이동 표시
+      const current = calculateCurrent(state.va);
+      const isConducting = Math.abs(current) > 0.05;
+
+      if (!state.isPaused && isConducting) {
+        animTime += current * 0.04;
+      }
+
+      // 회로 루프 둘레를 따른 전자 이동 애니메이션
+      circuitElectrons.forEach(e => {
+        let prog = (e.progress + (state.isPaused ? 0 : animTime * 0.05)) % 1;
+        if (prog < 0) prog += 1;
+
+        // 순방향 바이어스: 전자는 외부 도선에서 n -> 배터리 -> p 로 이동
+        let ex, ey;
+        if (prog < 0.4) {
+          // n측 수직 도선 -> 수평 도선
+          const p = prog / 0.4;
+          ex = nContactX - p * (nContactX - (midWireX + 35));
+          ey = wireY;
+        } else if (prog < 0.5) {
+          ex = midWireX;
+          ey = wireY;
+        } else if (prog < 0.9) {
+          const p = (prog - 0.5) / 0.4;
+          ex = (midWireX - 35) - p * ((midWireX - 35) - pContactX);
+          ey = wireY;
+        } else {
+          ex = pContactX;
+          ey = wireY + (prog - 0.9) / 0.1 * (chipY - wireY);
+        }
+
+        ctx.fillStyle = '#60a5fa';
+        ctx.beginPath();
+        ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 회로 전류 방향 표시 화살표 (I: p -> n)
+      if (state.va > 0.4) {
+        ctx.fillStyle = '#10b981';
+        ctx.strokeStyle = '#10b981';
+        ctx.font = 'bold 12px system-ui';
+        ctx.fillText('전류 방향 (I) ➔', midWireX - 70, wireY - 14);
+        ctx.fillStyle = '#60a5fa';
+        ctx.fillText('⬅ 전자 흐름 (e⁻)', midWireX + 25, wireY - 14);
+      }
+
+      ctx.restore();
+    }
+
+    // 배터리 기호 렌더링 (전압 극성에 따라 변경)
+    function drawBatterySymbol(ctx, x, y, va, isDark) {
+      ctx.save();
+      ctx.fillStyle = isDark ? '#1e293b' : '#f1f5f9';
+      ctx.fillRect(x - 30, y - 18, 60, 36);
+
+      ctx.strokeStyle = isDark ? '#e2e8f0' : '#0f172a';
+      ctx.lineWidth = 3;
+
+      if (va >= 0) {
+        // 순방향: 좌측이 (+), 우측이 (-)
+        // 긴 막대 (+)
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 14);
+        ctx.lineTo(x - 8, y + 14);
+        ctx.stroke();
+
+        // 짧고 두꺼운 막대 (-)
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(x + 8, y - 8);
+        ctx.lineTo(x + 8, y + 8);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText('+', x - 22, y - 10);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillText('-', x + 16, y - 10);
+      } else {
+        // 역방향: 좌측이 (-), 우측이 (+)
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 8);
+        ctx.lineTo(x - 8, y + 8);
+        ctx.stroke();
+
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x + 8, y - 14);
+        ctx.lineTo(x + 8, y + 14);
+        ctx.stroke();
+
+        ctx.fillStyle = '#3b82f6';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText('-', x - 22, y - 10);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillText('+', x + 16, y - 10);
+      }
+      ctx.restore();
+    }
+
+    // 영역 라벨 및 물리 설명 텍스트
+    function drawJunctionLabels(ctx, chipX, chipY, chipW, chipH, xp, xn, midX, textColor, subTextColor) {
+      ctx.save();
+      ctx.font = 'bold 16px system-ui';
+      ctx.textAlign = 'center';
+
+      // p형 영역 라벨
+      ctx.fillStyle = '#ef4444';
+      const pCenter = (chipX + xp) / 2;
+      ctx.fillText(state.dopingType === 'asym' ? 'p⁺형 반도체 (고도핑)' : 'p형 반도체 (p-type)', pCenter, chipY + 28);
+      ctx.font = '12px system-ui';
+      ctx.fillStyle = subTextColor;
+      ctx.fillText('다수 캐리어: 정공(h⁺) | 억셉터 Na', pCenter, chipY + 46);
+
+      // n형 영역 라벨
+      ctx.font = 'bold 16px system-ui';
+      ctx.fillStyle = '#3b82f6';
+      const nCenter = (chipX + chipW + xn) / 2;
+      ctx.fillText(state.dopingType === 'asym' ? 'n형 반도체 (저도핑)' : 'n형 반도체 (n-type)', nCenter, chipY + 28);
+      ctx.font = '12px system-ui';
+      ctx.fillStyle = subTextColor;
+      ctx.fillText('다수 캐리어: 전자(e⁻) | 도너 Nd', nCenter, chipY + 46);
+
+      // 공핍층 폭 W 표시 가이드
+      ctx.font = 'bold 13px system-ui';
+      ctx.fillStyle = '#f59e0b';
+      const depY = chipY + chipH - 12;
+      ctx.fillText('◀ 공핍층 폭 (W) ▶', midX, depY);
+
+      if (state.dopingType === 'asym') {
+        ctx.font = '11px system-ui';
+        ctx.fillStyle = '#a855f7';
+        ctx.fillText('xp 좁음 ◀ | ▶ xn 훨씬 넓음 (W ∝ 1/√N)', midX, depY - 16);
+      }
+      ctx.restore();
+    }
+
+    /* --------------------------------------------------------------------------
+       메인 2: 에너지 밴드 다이어그램 렌더링 (bandCanvas)
+       -------------------------------------------------------------------------- */
+    function renderBandDiagram() {
+      const { width: w, height: h, dpr } = resizeCanvas(bandCanvas);
+      ctxB.save();
+      ctxB.scale(dpr, dpr);
+      ctxB.clearRect(0, 0, w, h);
+
+      const isDark = state.theme === 'dark';
+      const textColor = isDark ? '#f8fafc' : '#0f172a';
+      const subTextColor = isDark ? '#94a3b8' : '#64748b';
+
+      const padX = w * 0.08;
+      const plotW = w * 0.84;
+      const midX = padX + plotW / 2;
+      const centerY = h * 0.52;
+
+      const dep = calculateDepletionWidth(state.va, state.dopingType);
+      const halfDepPx = (plotW * 0.38) * dep.totalRelative;
+      const xp = midX - halfDepPx * (state.dopingType === 'asym' ? 0.2 : 0.5);
+      const xn = midX + halfDepPx * (state.dopingType === 'asym' ? 0.8 : 0.5);
+
+      // 밴드 오프셋 높이 deltaE = q * (Vbi - Va)
+      // 기준 0V일 때 약 65px 높이차
+      const deltaE = Math.max(8, (V_BI - state.va) * 85);
+      const bandGap = h * 0.30; // Eg (Si ~ 1.12eV 시각화)
+
+      // 함수: x 위치에 따른 전도대 하단 Ec(x) 높이 계산
+      function getEc(x) {
+        if (x <= xp) {
+          return centerY - deltaE / 2;
+        } else if (x >= xn) {
+          return centerY + deltaE / 2;
+        } else {
+          // 공핍층 내부: 포아송 방정식 2차 포물선 형태 부드러운 연결
+          const norm = (x - xp) / (xn - xp);
+          // 부드러운 3차 에르미트 보간(smoothstep)
+          const s = norm * norm * (3 - 2 * norm);
+          return (centerY - deltaE / 2) + s * deltaE;
+        }
+      }
+
+      // 1. 전도대(Ec) 및 가전자대(Ev) 영역 채우기
+      ctxB.fillStyle = isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)';
+      ctxB.beginPath();
+      ctxB.moveTo(padX, 0);
+      for (let x = padX; x <= padX + plotW; x += 4) {
+        ctxB.lineTo(x, getEc(x));
+      }
+      ctxB.lineTo(padX + plotW, 0);
+      ctxB.closePath();
+      ctxB.fill();
+
+      ctxB.fillStyle = isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)';
+      ctxB.beginPath();
+      ctxB.moveTo(padX, h);
+      for (let x = padX; x <= padX + plotW; x += 4) {
+        ctxB.lineTo(x, getEc(x) + bandGap);
+      }
+      ctxB.lineTo(padX + plotW, h);
+      ctxB.closePath();
+      ctxB.fill();
+
+      // 2. 전도대(Ec) 실선 그리기
+      ctxB.strokeStyle = '#38bdf8';
+      ctxB.lineWidth = 3;
+      ctxB.beginPath();
+      for (let x = padX; x <= padX + plotW; x += 4) {
+        const y = getEc(x);
+        if (x === padX) ctxB.moveTo(x, y);
+        else ctxB.lineTo(x, y);
+      }
+      ctxB.stroke();
+
+      // 3. 가전자대(Ev) 실선 그리기
+      ctxB.strokeStyle = '#f87171';
+      ctxB.lineWidth = 3;
+      ctxB.beginPath();
+      for (let x = padX; x <= padX + plotW; x += 4) {
+        const y = getEc(x) + bandGap;
+        if (x === padX) ctxB.moveTo(x, y);
+        else ctxB.lineTo(x, y);
+      }
+      ctxB.stroke();
+
+      // 4. 페르미 준위 (EF) 및 준페르미 준위 (EFp, EFn)
+      // 열적 평형(0V)에서는 일직선! 바이어스 인가 시 qVa 만큼 쪼개짐
+      const efP = (centerY - deltaE / 2) + bandGap * 0.82;
+      const efN = efP + (state.va * 85); // qVa 분리
+
+      ctxB.setLineDash([5, 4]);
+      ctxB.lineWidth = 2;
+
+      if (Math.abs(state.va) < 0.02) {
+        // 열적 평형: 단일 페르미 준위 EF
+        ctxB.strokeStyle = '#10b981';
+        ctxB.beginPath();
+        ctxB.moveTo(padX, efP);
+        ctxB.lineTo(padX + plotW, efP);
+        ctxB.stroke();
+
+        ctxB.fillStyle = '#10b981';
+        ctxB.font = 'bold 12px system-ui';
+        ctxB.fillText('EF (평형 페르미 준위: 일치)', padX + 10, efP - 6);
+      } else {
+        // 비평형 바이어스: EFp 및 EFn 분리
+        // p측 EFp
+        ctxB.strokeStyle = '#f43f5e';
+        ctxB.beginPath();
+        ctxB.moveTo(padX, efP);
+        ctxB.lineTo(midX, efP);
+        ctxB.stroke();
+
+        // n측 EFn
+        ctxB.strokeStyle = '#0284c7';
+        ctxB.beginPath();
+        ctxB.moveTo(midX, efN);
+        ctxB.lineTo(padX + plotW, efN);
+        ctxB.stroke();
+
+        ctxB.font = 'bold 11px system-ui';
+        ctxB.fillStyle = '#f43f5e';
+        ctxB.fillText('EFp (정공 준페르미)', padX + 8, efP - 6);
+        ctxB.fillStyle = '#0284c7';
+        ctxB.fillText('EFn (전자 준페르미)', padX + plotW - 120, efN - 6);
+
+        // 준페르미 분리 간격 화살표 qVa
+        ctxB.strokeStyle = '#a855f7';
+        ctxB.fillStyle = '#a855f7';
+        ctxB.beginPath();
+        ctxB.moveTo(midX, efP);
+        ctxB.lineTo(midX, efN);
+        ctxB.stroke();
+        ctxB.fillText(`qVa = ${(state.va).toFixed(2)} eV`, midX + 8, (efP + efN) / 2);
+      }
+      ctxB.setLineDash([]);
+
+      // 5. 전위 장벽 높이 q(Vbi - Va) 가이드 화살표
+      const topBarrierY = centerY - deltaE / 2;
+      const botBarrierY = centerY + deltaE / 2;
+      const arrowGuideX = padX + plotW - 25;
+
+      ctxB.strokeStyle = '#f59e0b';
+      ctxB.fillStyle = '#f59e0b';
+      ctxB.lineWidth = 2;
+      ctxB.beginPath();
+      ctxB.moveTo(arrowGuideX, topBarrierY);
+      ctxB.lineTo(arrowGuideX, botBarrierY);
+      ctxB.stroke();
+
+      // 위/아래 화살촉
+      drawArrowHead(ctxB, arrowGuideX, topBarrierY, -Math.PI / 2, 7);
+      drawArrowHead(ctxB, arrowGuideX, botBarrierY, Math.PI / 2, 7);
+
+      ctxB.font = 'bold 13px system-ui';
+      ctxB.textAlign = 'right';
+      ctxB.fillText(`장벽 q(Vbi - Va) = ${Math.max(0, V_BI - state.va).toFixed(2)} eV`, arrowGuideX - 10, (topBarrierY + botBarrierY) / 2 + 4);
+
+      // 밴드 텍스트 라벨 (Ec, Ev)
+      ctxB.textAlign = 'left';
+      ctxB.font = 'bold 14px system-ui';
+      ctxB.fillStyle = '#38bdf8';
+      ctxB.fillText('전도대 (Ec)', padX + 8, getEc(padX) - 10);
+      ctxB.fillStyle = '#f87171';
+      ctxB.fillText('가전자대 (Ev)', padX + 8, getEc(padX) + bandGap + 20);
+
+      ctxB.restore();
+    }
+
+    function drawArrowHead(ctx, x, y, angle, size) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-size, -size * 0.6);
+      ctx.lineTo(-size, size * 0.6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /* --------------------------------------------------------------------------
+       메인 3: I-V 특성 곡선 & 실시간 동작점 렌더링 (ivCanvas)
+       -------------------------------------------------------------------------- */
+    function renderIVCurve() {
+      const { width: w, height: h, dpr } = resizeCanvas(ivCanvas);
+      ctxI.save();
+      ctxI.scale(dpr, dpr);
+      ctxI.clearRect(0, 0, w, h);
+
+      const isDark = state.theme === 'dark';
+      const textColor = isDark ? '#f8fafc' : '#0f172a';
+      const subTextColor = isDark ? '#94a3b8' : '#64748b';
+
+      const padLeft = 60;
+      const padRight = 30;
+      const padTop = 25;
+      const padBottom = 35;
+      const plotW = w - padLeft - padRight;
+      const plotH = h - padTop - padBottom;
+
+      // 축 범위 정의: V축 (-5.0V ~ +1.0V), I축 (-10mA ~ +80mA)
+      const minV = -5.0;
+      const maxV = 1.0;
+      const minI = -8.0;
+      const maxI = 60.0;
+
+      function toScreenX(v) {
+        return padLeft + ((v - minV) / (maxV - minV)) * plotW;
+      }
+      function toScreenY(i) {
+        return padTop + plotH - ((i - minI) / (maxI - minI)) * plotH;
+      }
+
+      const zeroX = toScreenX(0);
+      const zeroY = toScreenY(0);
+
+      // (1) 격자선 및 배경 축
+      ctxI.strokeStyle = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+      ctxI.lineWidth = 1;
+
+      // V축 눈금 (-4, -3, -2, -1, 0, 0.7)
+      [-4, -3, -2, -1, 0, 0.7].forEach(v => {
+        const sx = toScreenX(v);
+        ctxI.beginPath();
+        ctxI.moveTo(sx, padTop);
+        ctxI.lineTo(sx, padTop + plotH);
+        ctxI.stroke();
+
+        ctxI.fillStyle = subTextColor;
+        ctxI.font = '10px monospace';
+        ctxI.textAlign = 'center';
+        ctxI.fillText(v.toString() + 'V', sx, padTop + plotH + 16);
+      });
+
+      // (2) 메인 기준축 (X축 Va=0, Y축 I=0)
+      ctxI.strokeStyle = isDark ? '#64748b' : '#94a3b8';
+      ctxI.lineWidth = 2;
+      ctxI.beginPath();
+      // X축 (전압축)
+      ctxI.moveTo(padLeft, zeroY);
+      ctxI.lineTo(padLeft + plotW, zeroY);
+      // Y축 (전류축)
+      ctxI.moveTo(zeroX, padTop);
+      ctxI.lineTo(zeroX, padTop + plotH);
+      ctxI.stroke();
+
+      // 축 라벨
+      ctxI.fillStyle = textColor;
+      ctxI.font = 'bold 12px system-ui';
+      ctxI.textAlign = 'right';
+      ctxI.fillText('전압 Va (V) ➔', padLeft + plotW, zeroY - 8);
+      ctxI.textAlign = 'left';
+      ctxI.fillText('⬆ 전류 I (mA)', zeroX + 8, padTop + 14);
+
+      // (3) 실리콘 I-V 특성 곡선 플로팅
+      ctxI.strokeStyle = '#10b981';
+      ctxI.lineWidth = 3;
+      ctxI.beginPath();
+
+      const numSteps = 240;
+      for (let s = 0; s <= numSteps; s++) {
+        const v = minV + (s / numSteps) * (maxV - minV);
+        const i = calculateCurrent(v);
+        const sx = toScreenX(v);
+        const sy = toScreenY(i);
+
+        if (s === 0) ctxI.moveTo(sx, sy);
+        else ctxI.lineTo(sx, sy);
+      }
+      ctxI.stroke();
+
+      // 0.7V 문턱전압(Vth) 가이드 점선
+      const vthX = toScreenX(0.7);
+      ctxI.strokeStyle = '#f59e0b';
+      ctxI.setLineDash([3, 3]);
+      ctxI.lineWidth = 1.5;
+      ctxI.beginPath();
+      ctxI.moveTo(vthX, padTop);
+      ctxI.lineTo(vthX, padTop + plotH);
+      ctxI.stroke();
+      ctxI.setLineDash([]);
+      ctxI.fillStyle = '#f59e0b';
+      ctxI.font = 'bold 11px system-ui';
+      ctxI.textAlign = 'center';
+      ctxI.fillText('문턱전압 Vth ≈ 0.7V', vthX, padTop + 12);
+
+      // (4) 현재 인가전압의 실시간 동작점(Operating Point) 붉은 강조점
+      const curI = calculateCurrent(state.va);
+      const opX = toScreenX(state.va);
+      const opY = toScreenY(curI);
+
+      // 점선 가이드
+      ctxI.strokeStyle = '#ef4444';
+      ctxI.setLineDash([4, 4]);
+      ctxI.beginPath();
+      ctxI.moveTo(opX, zeroY);
+      ctxI.lineTo(opX, opY);
+      ctxI.lineTo(zeroX, opY);
+      ctxI.stroke();
+      ctxI.setLineDash([]);
+
+      // 동작점 원
+      ctxI.fillStyle = '#ef4444';
+      ctxI.beginPath();
+      ctxI.arc(opX, opY, 6.5, 0, Math.PI * 2);
+      ctxI.fill();
+      ctxI.strokeStyle = '#ffffff';
+      ctxI.lineWidth = 2;
+      ctxI.stroke();
+
+      // 동작점 수치 툴팁
+      ctxI.fillStyle = isDark ? '#1e293b' : '#ffffff';
+      ctxI.strokeStyle = '#ef4444';
+      ctxI.lineWidth = 1.5;
+      const labelText = `(${state.va.toFixed(2)}V, ${curI > 0.05 ? curI.toFixed(2) + 'mA' : curI < 0 ? '-1μA' : '0mA'})`;
+      const tipX = Math.min(opX + 12, padLeft + plotW - 120);
+      const tipY = Math.max(opY - 14, padTop + 20);
+
+      ctxI.strokeRect(tipX - 4, tipY - 14, 115, 20);
+      ctxI.fillRect(tipX - 4, tipY - 14, 115, 20);
+
+      ctxI.fillStyle = textColor;
+      ctxI.font = 'bold 11px monospace';
+      ctxI.textAlign = 'left';
+      ctxI.fillText(labelText, tipX, tipY);
+
+      ctxI.restore();
+    }
+
+    /* ==========================================================================
+       4. 사용자 인터랙션 & 컨트롤 바 이벤트 핸들러
+       ========================================================================== */
+    const voltageSlider = document.getElementById('voltageSlider');
+    const voltageDisplay = document.getElementById('voltageDisplay');
+    const metricMode = document.getElementById('metric-mode');
+    const metricBarrier = document.getElementById('metric-barrier');
+    const metricWidth = document.getElementById('metric-width');
+    const metricCurrent = document.getElementById('metric-current');
+
+    function updateSimulationValues() {
+      voltageDisplay.textContent = `${state.va >= 0 ? '+' : ''}${state.va.toFixed(2)} V`;
+
+      // 프리셋 활성 버튼 갱신
+      document.getElementById('btn-preset-eq').classList.toggle('active-preset', Math.abs(state.va - 0.0) < 0.01);
+      document.getElementById('btn-preset-fwd').classList.toggle('active-preset', Math.abs(state.va - 0.7) < 0.01);
+      document.getElementById('btn-preset-rev').classList.toggle('active-preset', Math.abs(state.va - (-3.0)) < 0.01);
+
+      // 물리량 요약 카드 업데이트
+      const dep = calculateDepletionWidth(state.va, state.dopingType);
+      const cur = calculateCurrent(state.va);
+
+      if (state.va > 0.05) {
+        metricMode.textContent = '순방향 바이어스 (Forward)';
+        metricMode.style.color = '#ef4444';
+      } else if (state.va < -0.05) {
+        metricMode.textContent = '역방향 바이어스 (Reverse)';
+        metricMode.style.color = '#3b82f6';
+      } else {
+        metricMode.textContent = '열적 평형 (Equilibrium)';
+        metricMode.style.color = '#38bdf8';
+      }
+
+      metricBarrier.textContent = `${Math.max(0, V_BI - state.va).toFixed(2)} eV`;
+      metricWidth.textContent = `${dep.totalRelative.toFixed(2)} W₀ (${state.va > 0 ? '축소' : state.va < 0 ? '확장' : '기준'})`;
+      
+      if (cur > 0.05) {
+        metricCurrent.textContent = `${cur.toFixed(2)} mA (도통)`;
+        metricCurrent.style.color = '#10b981';
+      } else if (state.va < -0.1) {
+        metricCurrent.textContent = '≈ -1 pA (포화 역전류)';
+        metricCurrent.style.color = '#94a3b8';
+      } else {
+        metricCurrent.textContent = '0.00 mA';
+        metricCurrent.style.color = '#94a3b8';
+      }
+    }
+
+    voltageSlider.addEventListener('input', (e) => {
+      state.va = parseFloat(e.target.value);
+      updateSimulationValues();
+    });
+
+    function setPreset(v) {
+      state.va = v;
+      voltageSlider.value = v;
+      updateSimulationValues();
+    }
+
+    function setDoping(type) {
+      state.dopingType = type;
+      document.getElementById('dop-sym').classList.toggle('active', type === 'sym');
+      document.getElementById('dop-asym').classList.toggle('active', type === 'asym');
+      updateSimulationValues();
+    }
+
+    function togglePause() {
+      state.isPaused = !state.isPaused;
+      const btn = document.getElementById('btn-pause');
+      btn.textContent = state.isPaused ? '▶ 재생 (Space)' : '⏸ 일시정지 (Space)';
+      btn.style.borderColor = state.isPaused ? '#ef4444' : 'var(--border-color)';
+    }
+
+    function toggleLabels() {
+      state.showLabels = !state.showLabels;
+      document.getElementById('btn-labels').textContent = state.showLabels ? '🏷 물리 라벨 [ON]' : '🏷 물리 라벨 [OFF]';
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', state.theme);
+      document.getElementById('btn-theme').textContent = state.theme === 'dark' ? '☀️ 라이트 테마' : '🌙 다크 테마';
+    }
+
+    function resetSimulation() {
+      setPreset(0.0);
+      setDoping('sym');
+      state.isPaused = false;
+      document.getElementById('btn-pause').textContent = '⏸ 일시정지 (Space)';
+    }
+
+    // 단축키 리스너
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePause();
+      } else if (e.key === '1') {
+        setPreset(0.0);
+      } else if (e.key === '2') {
+        setPreset(0.7);
+      } else if (e.key === '3') {
+        setPreset(-3.0);
+      } else if (e.key.toLowerCase() === 'r') {
+        resetSimulation();
+      }
+    });
+
+    /* ==========================================================================
+       5. 메인 애니메이션 루프
+       ========================================================================== */
+    function animate() {
+      renderJunction();
+      renderBandDiagram();
+      renderIVCurve();
+      requestAnimationFrame(animate);
+    }
+
+    // 초기화
+    updateSimulationValues();
+    requestAnimationFrame(animate);
+
+    // 창 크기 변경 시 자동 리드로우
+    window.addEventListener('resize', () => {
+      renderJunction();
+      renderBandDiagram();
+      renderIVCurve();
+    });
+  </script>
+</body>
+</html>
